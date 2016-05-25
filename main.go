@@ -5,9 +5,11 @@ import (
 	"net/http"
 	
 	"github.com/hsienchiaolee/PhotoUploaderServer/api"
+	"github.com/hsienchiaolee/PhotoUploaderServer/domain"
 )
 
 func main() {
 	log.Printf("Starting Server")
-	http.ListenAndServe(":8080", api.Handlers())
+	fileSystem := domain.NewOsFileSystem()
+	http.ListenAndServe(":8080", api.Handlers(fileSystem))
 }

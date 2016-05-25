@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"os"
 	"io"
 	"log"
 )
@@ -11,14 +12,29 @@ type File interface {
 	io.Writer
 }
 
+// os interface
 type OperatingSystem interface {
 	Create(name string) (File, error)
 }
 
+type osOperatingSystem struct {}
+
+func (osOperatingSystem) Create(name string) (File, error) {
+	return os.Create(name)
+}
+
+// io interface
 type InputOutput interface {
 	Copy(dst File, src io.Reader) (written int64, err error)
 }
 
+type ioInputOutput struct {}
+
+func (ioInputOutput) Copy(dst File, src io.Reader) (written int64, err error) {
+	return io.Copy(dst, src)
+}
+
+// fileSystem
 type FileSystem interface {
 	Save(name string, src io.Reader) (written int64, error error)
 }
@@ -35,6 +51,13 @@ func NewFileSystem(
 	return fileSystem{
 		operatingSystem: operatingSystem,
 		inputOutput:     inputOutput,
+	}
+}
+
+func NewOsFileSystem() FileSystem {
+		return fileSystem{
+			operatingSystem: osOperatingSystem{},
+			inputOutput:     ioInputOutput{},
 	}
 }
 
