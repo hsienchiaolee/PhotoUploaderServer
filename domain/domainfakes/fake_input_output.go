@@ -47,6 +47,7 @@ func (fake *FakeInputOutput) CopyCallCount() int {
 func (fake *FakeInputOutput) CopyArgsForCall(i int) (domain.File, io.Reader) {
 	fake.copyMutex.RLock()
 	defer fake.copyMutex.RUnlock()
+	
 	return fake.copyArgsForCall[i].dst, fake.copyArgsForCall[i].src
 }
 

@@ -1,62 +1,63 @@
 package domain_test
 
 import (
-	"io"
 	"bytes"
-	"testing"
+	"log"
 
 	"github.com/hsienchiaolee/PhotoUploaderServer/domain"
 	"github.com/hsienchiaolee/PhotoUploaderServer/domain/domainfakes"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-var (
-	fakeOS  *domainfakes.FakeOperatingSystem
-	fakeIO  *domainfakes.FakeInputOutput
-	subject domain.FileSystem
-)
+var _ = Describe("FileSystem", func() {
+	var (
+		subject domain.FileSystem
+		fakeOS  *domainfakes.FakeOperatingSystem
+		fakeIO  *domainfakes.FakeInputOutput
+	)
 
-func init() {
-	fakeOS = new(domainfakes.FakeOperatingSystem)
-	fakeIO = new(domainfakes.FakeInputOutput)
-	subject = domain.NewFileSystem(fakeOS, fakeIO)
-}
+	BeforeEach(func() {
+		fakeOS = new(domainfakes.FakeOperatingSystem)
+		fakeIO = new(domainfakes.FakeInputOutput)
+		log.Printf("OS: %v; IO: %v;", fakeOS, fakeIO)
+		subject = domain.NewFileSystem(fakeOS, fakeIO)
+	})
 
-func TestSavingFile(t *testing.T) {
-	filePath := "filePath"
-	fakeFile := new(domainfakes.FakeFile)
-	fakeOS.CreateStub = func(name string) (domain.File, error) {
-		if name != filePath {
-			t.Errorf("Expect fakeOS.create to be called with %s, but instead got %s", filePath, name)
-		}
-		return fakeFile, nil
-	}
+	Describe("saving a file", func() {
+		var (
+			filePath string
+			fakeFile *domainfakes.FakeFile
+			reader   *bytes.Buffer
+		)
 
-	fakeIO.CopyStub = func(dst domain.File, src io.Reader) (written int64, err error) {
-		if dst != fakeFile {
-			t.Errorf("Expect fakeOS.copy to be called with destination file %s, but instead got %s", fakeFile, dst)
-		}
+		BeforeEach(func() {
+			filePath = "filePath"
+			fakeFile = new(domainfakes.FakeFile)
+			reader = bytes.NewBufferString("some data to be stored")
 
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(src)
-		sourceData := buf.String()
-		if sourceData != "some data to be stored" {
-			t.Errorf("Expect fakeOS.copy to be called with source data 'some data to be stored', but instead got %s", sourceData)
-		}
-		return 0, nil
-	}
+			fakeOS.CreateReturns(fakeFile, nil)
+			fakeIO.CopyReturns(0, nil)
 
-	reader := bytes.NewBufferString("some data to be stored")
-	subject.Save(filePath, reader)
+			subject.Save(filePath, reader)
+		})
 
-	if fakeOS.CreateCallCount() != 1 {
-		t.Error("Expect os.Create to be called")
-	}
+		It("creates the destination file with os in the correct file path", func() {
+			Expect(fakeOS.CreateCallCount()).To(Equal(1))
+			Expect(fakeOS.CreateArgsForCall(0)).To(Equal(filePath))
+		})
 
-	if fakeIO.CopyCallCount() != 1 {
-		t.Error("Expect io.Copy to be called")
-	}
+		It("copies the file into the destination file", func() {
+			Expect(fakeIO.CopyCallCount()).To(Equal(1))
 
-	if fakeFile.CloseCallCount() != 1 {
-		t.Error("Expect file.Close to be called")
-	}
-}
+			dst, src := fakeIO.CopyArgsForCall(0)
+			Expect(dst).To(Equal(fakeFile))
+			Expect(src).To(Equal(reader))
+		})
+
+		It("closes the file upon completion", func() {
+			Expect(fakeFile.CloseCallCount()).To(Equal(1))
+		})
+	})
+})

@@ -67,6 +67,6 @@ func (fs fileSystem) Save(name string, src io.Reader) (written int64, error erro
 		log.Printf("Unable to create file: %v", error)
 	}
 	defer out.Close()
-	
+
 	return fs.inputOutput.Copy(out, src)
 }
