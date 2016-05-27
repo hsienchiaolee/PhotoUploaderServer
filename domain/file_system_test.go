@@ -2,7 +2,6 @@ package domain_test
 
 import (
 	"bytes"
-	"log"
 
 	"github.com/hsienchiaolee/PhotoUploaderServer/domain"
 	"github.com/hsienchiaolee/PhotoUploaderServer/domain/domainfakes"
@@ -21,7 +20,6 @@ var _ = Describe("FileSystem", func() {
 	BeforeEach(func() {
 		fakeOS = new(domainfakes.FakeOperatingSystem)
 		fakeIO = new(domainfakes.FakeInputOutput)
-		log.Printf("OS: %v; IO: %v;", fakeOS, fakeIO)
 		subject = domain.NewFileSystem(fakeOS, fakeIO)
 	})
 
